@@ -71,6 +71,44 @@ def collect_player_links(driver):
 
             print(f"   Found {new_count} new players.")
 
+            if page_num < PAGES_TO_SCRAPE:
+                next_page = str(page_num + 1)
+                print(f"   Navigating to page {next_page}...")
+
+                try:
+                    table_body = driver.find_element(By.TAG_NAME, "tbody")
+                    old_table_text = table_body.text
+                except Exception:
+                    old_table_text = ""
+
+                try:
+                    # Find button for next page (e.g., "2", "3")
+                    next_btn = WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable(
+                            (
+                                By.XPATH,
+                                f"//a[normalize-space()='{next_page}'] | //button[normalize-space()='{next_page}'] | //li[contains(text(), '{next_page}')]",
+                            )
+                        )
+                    )
+
+                    driver.execute_script(
+                        "arguments[0].scrollIntoView({block: 'center'});", next_btn
+                    )
+                    time.sleep(0.5)
+                    driver.execute_script("arguments[0].click();", next_btn)
+
+                    # Wait for table to change
+                    WebDriverWait(driver, 10).until(
+                        lambda d: d.find_element(By.TAG_NAME, "tbody").text
+                        != old_table_text
+                    )
+                    time.sleep(1)
+
+                except Exception as e:
+                    print(f"   Could not click page {next_page}: {e}")
+                    break
+
         except Exception as e:
             print(f"Error on page {page_num}: {e}")
 
